@@ -12,7 +12,11 @@ function escapeHtml(value: string) {
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "localhost",
   port: parseInt(process.env.SMTP_PORT || "1025"),
-  secure: false,
+  secure: process.env.SMTP_SECURE === "true",
+  ignoreTLS: process.env.SMTP_IGNORE_TLS === "true",
+  tls: {
+    rejectUnauthorized: process.env.SMTP_TLS_REJECT_UNAUTHORIZED !== "false",
+  },
   auth:
     process.env.SMTP_USER
       ? {
