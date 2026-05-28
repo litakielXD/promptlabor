@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import ModelBadge from "@/components/ModelBadge";
 import { isAdminSession } from "@/lib/session";
+import { apiPath } from "@/lib/utils";
 
 const MODELS = ["ALLROUND", "NOTEBOOKLM"];
 
@@ -61,8 +62,8 @@ export default function EditPromptPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/categories").then((r) => r.json()),
-      fetch(`/api/prompts/${slug}`).then((r) => r.json()),
+      fetch(apiPath("/categories")).then((r) => r.json()),
+      fetch(apiPath(`/prompts/${slug}`)).then((r) => r.json()),
     ]).then(([cats, prompt]: [Category[], Prompt]) => {
       setCategories(cats);
       setTitle(prompt.title);
@@ -105,7 +106,7 @@ export default function EditPromptPage() {
     formData.append("published", String(published));
     if (imageFile) formData.append("outputImage", imageFile);
 
-    const res = await fetch(`/api/prompts/${slug}`, {
+    const res = await fetch(apiPath(`/prompts/${slug}`), {
       method: "PATCH",
       body: formData,
     });
@@ -125,7 +126,7 @@ export default function EditPromptPage() {
       setTimeout(() => setDeleteConfirm(false), 5000);
       return;
     }
-    const res = await fetch(`/api/prompts/${slug}`, { method: "DELETE" });
+    const res = await fetch(apiPath(`/prompts/${slug}`), { method: "DELETE" });
     const data = await res.json();
     if (data.success) {
       router.push("/prompts");

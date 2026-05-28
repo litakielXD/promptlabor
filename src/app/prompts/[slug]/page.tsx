@@ -7,7 +7,7 @@ import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import ModelBadge from "@/components/ModelBadge";
-import { formatDate, formatRelativeDate, parseTags } from "@/lib/utils";
+import { apiPath, formatDate, formatRelativeDate, parseTags } from "@/lib/utils";
 import { isAdminSession, isApprovedSession } from "@/lib/session";
 
 function highlightPlaceholders(text: string) {
@@ -89,7 +89,7 @@ export default function PromptDetailPage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/prompts/${slug}`)
+    fetch(apiPath(`/prompts/${slug}`))
       .then((r) => {
         if (r.status === 404) { setNotFoundError(true); return null; }
         return r.json();
@@ -102,7 +102,7 @@ export default function PromptDetailPage() {
 
   useEffect(() => {
     if (session) {
-      fetch(`/api/prompts/${slug}/subscribe`)
+      fetch(apiPath(`/prompts/${slug}/subscribe`))
         .then((r) => r.json())
         .then((data) => setSubscribed(data.subscribed));
     }
@@ -111,7 +111,7 @@ export default function PromptDetailPage() {
   async function toggleSubscribe() {
     if (!session) return;
     setSubLoading(true);
-    const res = await fetch(`/api/prompts/${slug}/subscribe`, {
+    const res = await fetch(apiPath(`/prompts/${slug}/subscribe`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: subscribed ? "unsubscribe" : "subscribe" }),
@@ -125,7 +125,7 @@ export default function PromptDetailPage() {
     e.preventDefault();
     setCommentError("");
     setCommentLoading(true);
-    const res = await fetch(`/api/prompts/${slug}/comments`, {
+    const res = await fetch(apiPath(`/prompts/${slug}/comments`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content: comment, isSuccessStory }),

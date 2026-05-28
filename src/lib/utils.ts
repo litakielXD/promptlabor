@@ -10,6 +10,15 @@ export function slugify(text: string): string {
     .replace(/-+/g, "-");
 }
 
+export function appPath(path: string): string {
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+  return `${basePath}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+export function apiPath(path: string): string {
+  return appPath(path.startsWith("/api") ? path : `/api${path.startsWith("/") ? path : `/${path}`}`);
+}
+
 export const AI_MODELS = {
   ALLROUND: {
     label: "Allround",

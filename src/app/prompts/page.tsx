@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import ModelBadge from "@/components/ModelBadge";
-import { formatRelativeDate, parseTags, truncate } from "@/lib/utils";
+import { apiPath, formatRelativeDate, parseTags, truncate } from "@/lib/utils";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -22,12 +22,12 @@ function PromptsContent() {
   const category = searchParams.get("category") || "";
 
   const { data: prompts, isLoading } = useSWR(
-    `/api/prompts?${new URLSearchParams({ ...(search && { search }), ...(model && { model }), ...(category && { category }) }).toString()}`,
+    apiPath(`/prompts?${new URLSearchParams({ ...(search && { search }), ...(model && { model }), ...(category && { category }) }).toString()}`),
     fetcher,
     { refreshInterval: 30000 }
   );
 
-  const { data: categories } = useSWR("/api/categories", fetcher);
+  const { data: categories } = useSWR(apiPath("/categories"), fetcher);
 
   function setParam(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());

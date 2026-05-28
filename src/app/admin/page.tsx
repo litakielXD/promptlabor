@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { formatRelativeDate } from "@/lib/utils";
+import { apiPath, formatRelativeDate } from "@/lib/utils";
 import { isAdminSession } from "@/lib/session";
 
 interface User {
@@ -52,8 +52,8 @@ export default function AdminPage() {
     if (!isAdmin) return;
 
     Promise.all([
-      fetch("/api/admin/users").then((r) => r.json()),
-      fetch("/api/prompts?admin=true").then((r) => r.json()),
+      fetch(apiPath("/admin/users")).then((r) => r.json()),
+      fetch(apiPath("/prompts?admin=true")).then((r) => r.json()),
     ]).then(([users, prompts]) => {
       setData({
         pendingUsers: users.filter((u: User) => !u.approved),
@@ -67,7 +67,7 @@ export default function AdminPage() {
   }, [isAdmin]);
 
   async function approveUser(id: string, approved: boolean) {
-    await fetch(`/api/admin/users/${id}`, {
+    await fetch(apiPath(`/admin/users/${id}`), {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ approved }),
@@ -87,7 +87,7 @@ export default function AdminPage() {
 
   async function deleteUser(id: string) {
     if (!confirm("Nutzer wirklich löschen?")) return;
-    await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
+    await fetch(apiPath(`/admin/users/${id}`), { method: "DELETE" });
     setData((prev) =>
       prev
         ? {

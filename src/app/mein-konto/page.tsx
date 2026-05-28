@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { apiPath } from "@/lib/utils";
 import Link from "next/link";
 
 interface NotificationSettings {
@@ -35,7 +36,7 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (session) {
-      fetch("/api/user/notifications")
+      fetch(apiPath("/user/notifications"))
         .then((r) => r.json())
         .then(setSettings);
     }
@@ -44,7 +45,7 @@ export default function AccountPage() {
   async function saveSettings() {
     if (!settings) return;
     setSaving(true);
-    await fetch("/api/user/notifications", {
+    await fetch(apiPath("/user/notifications"), {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -61,7 +62,7 @@ export default function AccountPage() {
     e.preventDefault();
     setPwError("");
     setPwLoading(true);
-    const res = await fetch("/api/user/password", {
+    const res = await fetch(apiPath("/user/password"), {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ currentPassword: currentPw, newPassword: newPw }),

@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import ModelBadge from "@/components/ModelBadge";
 import { isAdminSession } from "@/lib/session";
+import { apiPath } from "@/lib/utils";
 
 const MODELS = ["ALLROUND", "NOTEBOOKLM"];
 
@@ -42,7 +43,7 @@ export default function NewPromptPage() {
   }, [status, isAdmin, router]);
 
   useEffect(() => {
-    fetch("/api/categories").then((r) => r.json()).then(setCategories);
+    fetch(apiPath("/categories")).then((r) => r.json()).then(setCategories);
   }, []);
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -71,7 +72,7 @@ export default function NewPromptPage() {
     formData.append("published", String(published));
     if (imageFile) formData.append("outputImage", imageFile);
 
-    const res = await fetch("/api/prompts", {
+    const res = await fetch(apiPath("/prompts"), {
       method: "POST",
       body: formData,
     });

@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { isAdminSession } from "@/lib/session";
+import { apiPath } from "@/lib/utils";
 
 interface Category {
   id: string;
@@ -153,7 +154,7 @@ export default function KategorienAdminPage() {
   }, [status, isAdmin, router]);
 
   useEffect(() => {
-    fetch("/api/categories")
+    fetch(apiPath("/categories"))
       .then((r) => r.json())
       .then((data) => {
         setCategories(data);
@@ -164,7 +165,7 @@ export default function KategorienAdminPage() {
   async function handleCreate(data: { name: string; description: string; color: string; icon: string }) {
     setError("");
     setSaving(true);
-    const res = await fetch("/api/categories", {
+    const res = await fetch(apiPath("/categories"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -182,7 +183,7 @@ export default function KategorienAdminPage() {
   async function handleUpdate(id: string, data: { name: string; description: string; color: string; icon: string }) {
     setError("");
     setSaving(true);
-    const res = await fetch(`/api/categories/${id}`, {
+    const res = await fetch(apiPath(`/categories/${id}`), {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -202,7 +203,7 @@ export default function KategorienAdminPage() {
   async function handleDelete(id: string, name: string) {
     if (!confirm(`Kategorie „${name}" wirklich löschen?`)) return;
     setError("");
-    const res = await fetch(`/api/categories/${id}`, { method: "DELETE" });
+    const res = await fetch(apiPath(`/categories/${id}`), { method: "DELETE" });
     const json = await res.json();
     if (json.success) {
       setCategories((prev) => prev.filter((c) => c.id !== id));

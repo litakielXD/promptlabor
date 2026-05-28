@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { apiPath } from "@/lib/utils";
 
 interface CategorySubscribeButtonProps {
   categorySlug: string;
@@ -14,7 +15,7 @@ export default function CategorySubscribeButton({ categorySlug }: CategorySubscr
 
   useEffect(() => {
     if (!session) return;
-    fetch(`/api/categories/${categorySlug}/subscribe`)
+    fetch(apiPath(`/categories/${categorySlug}/subscribe`))
       .then((r) => r.json())
       .then((d) => setSubscribed(d.subscribed));
   }, [session, categorySlug]);
@@ -23,7 +24,7 @@ export default function CategorySubscribeButton({ categorySlug }: CategorySubscr
 
   async function toggle() {
     setLoading(true);
-    const res = await fetch(`/api/categories/${categorySlug}/subscribe`, {
+    const res = await fetch(apiPath(`/categories/${categorySlug}/subscribe`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: subscribed ? "unsubscribe" : "subscribe" }),

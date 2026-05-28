@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ModelBadge from "@/components/ModelBadge";
-import { formatRelativeDate } from "@/lib/utils";
+import { apiPath, formatRelativeDate } from "@/lib/utils";
 import { isAdminSession } from "@/lib/session";
 
 interface Prompt {
@@ -35,7 +35,7 @@ export default function AdminPromptsPage() {
 
   useEffect(() => {
     if (!isAdmin) return;
-    fetch("/api/prompts?admin=true")
+    fetch(apiPath("/prompts?admin=true"))
       .then((r) => r.json())
       .then((data) => {
         setPrompts(data);
@@ -46,7 +46,7 @@ export default function AdminPromptsPage() {
   async function togglePublished(slug: string, currentlyPublished: boolean) {
     const formData = new FormData();
     formData.append("published", String(!currentlyPublished));
-    const res = await fetch(`/api/prompts/${slug}`, { method: "PATCH", body: formData });
+    const res = await fetch(apiPath(`/prompts/${slug}`), { method: "PATCH", body: formData });
     const data = await res.json();
     if (data.success) {
       setPrompts((prev) =>
@@ -57,7 +57,7 @@ export default function AdminPromptsPage() {
 
   async function deletePrompt(slug: string) {
     if (!confirm("Prompt wirklich löschen?")) return;
-    const res = await fetch(`/api/prompts/${slug}`, { method: "DELETE" });
+    const res = await fetch(apiPath(`/prompts/${slug}`), { method: "DELETE" });
     const data = await res.json();
     if (data.success) {
       setPrompts((prev) => prev.filter((p) => p.slug !== slug));
