@@ -1,0 +1,112 @@
+// Promptlabor – Prisma Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  password      String
+  role          String    @default("MEMBER") // MEMBER | ADMIN
+  approved      Boolean   @default(false)
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Benachrichtigungseinstellungen
+  notifyOnNewPrompt   Boolean @default(false)
+  notifyOnNewComment  Boolean @default(false)
+
+  prompts       Prompt[]
+  comments      Comment[]
+  subscriptions Subscription[]
+
+  @@map("users")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  color       String   @default("#6366f1")
+  icon        String   @default("📁")
+  createdAt   DateTime @default(now())
+
+  prompts       Prompt[]
+  subscriptions Subscription[]
+
+  @@map("categories")
+}
+
+model Prompt {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  content     String   // Der eigentliche Prompt-Text
+  description String?  // Kurzbeschreibung / Anwendungskontext
+  model       String   @default("ALLROUND") // ALLROUND | NOTEBOOKLM, optional: CHATGPT | CLAUDE | GEMINI
+  published   Boolean  @default(false)
+  
+  // Output-Beispiel
+  outputImageUrl String?
+  outputLink     String?
+  outputCaption  String?
+  
+  tags        String   @default("[]") // JSON-Array als String gespeichert
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId    String
+
+  category    Category @relation(fields: [categoryId], references: [id])
+  categoryId  String
+
+  comments      Comment[]
+  subscriptions Subscription[]
+
+  @@map("prompts")
+}
+
+model Comment {
+  id           String   @id @default(cuid())
+  content      String
+  isSuccessStory Boolean @default(false) // "Das hat bei mir funktioniert!"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  author       User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId     String
+
+  prompt       Prompt   @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  promptId     String
+
+  @@map("comments")
+}
+
+model Subscription {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+
+  // Entweder Prompt ODER Kategorie abonnieren
+  prompt     Prompt?  @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  promptId   String?
+
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId String?
+
+  @@unique([userId, promptId])
+  @@unique([userId, categoryId])
+  @@map("subscriptions")
+}

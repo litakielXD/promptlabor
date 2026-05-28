@@ -1,0 +1,18 @@
+[Unit]
+Description=Promptlabor Next.js App
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/mondschule.de/public_html/promptlabor
+Environment=NODE_ENV=production
+Environment=PORT=3017
+EnvironmentFile=/var/www/mondschule.de/public_html/promptlabor/.env
+ExecStart=/usr/bin/npm run start
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
