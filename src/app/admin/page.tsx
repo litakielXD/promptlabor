@@ -41,6 +41,7 @@ export default function AdminPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [passwordResetStatus, setPasswordResetStatus] = useState<Record<string, "sending" | "sent" | "error">>({});
+  const [passwordResetLinks, setPasswordResetLinks] = useState<Record<string, string>>({});
   const isAdmin = isAdminSession(session);
 
   useEffect(() => {
@@ -105,10 +106,15 @@ export default function AdminPage() {
     const res = await fetch(apiPath(`/admin/users/${user.id}/password-reset`), {
       method: "POST",
     });
+    const json = await res.json().catch(() => ({}));
 
-    setPasswordResetStatus((prev) => ({ ...prev, [user.id]: res.ok ? "sent" : "error" }));
+    if (res.ok && json.resetUrl) {
+      setPasswordResetLinks((prev) => ({ ...prev, [user.id]: json.resetUrl }));
+    }
 
-    if (res.ok) {
+    setPasswordResetStatus((prev) => ({ ...prev, [user.id]: res.ok && json.mailSent !== false ? "sent" : "error" }));
+
+    if (res.ok && json.mailSent !== false) {
       setTimeout(() => {
         setPasswordResetStatus((prev) => {
           const next = { ...prev };
@@ -312,7 +318,7 @@ export default function AdminPage() {
                             : passwordResetStatus[user.id] === "sent"
                               ? "Reset gesendet"
                               : passwordResetStatus[user.id] === "error"
-                                ? "Fehler"
+                                ? "Link kopieren"
                                 : "Passwort resetten"}
                         </button>
                         {!user.approved && (
@@ -331,6 +337,23 @@ export default function AdminPage() {
                           </button>
                         )}
                       </div>
+                      {passwordResetLinks[user.id] && (
+                        <div style={{ marginTop: "8px", display: "flex", gap: "6px", alignItems: "center", maxWidth: "520px" }}>
+                          <input
+                            className="form-input"
+                            value={passwordResetLinks[user.id]}
+                            readOnly
+                            style={{ fontSize: "0.78rem", padding: "6px 8px" }}
+                            onFocus={(e) => e.currentTarget.select()}
+                          />
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => navigator.clipboard.writeText(passwordResetLinks[user.id])}
+                          >
+                            Kopieren
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}

@@ -28,9 +28,12 @@ export async function POST(
   const template = emailTemplates.passwordReset(user.name, reset.url);
   const sent = await sendMail({ to: user.email, ...template });
 
-  if (!sent) {
-    return NextResponse.json({ error: "Reset-Mail konnte nicht gesendet werden." }, { status: 500 });
-  }
-
-  return NextResponse.json({ success: true });
+  return NextResponse.json({
+    success: true,
+    mailSent: sent,
+    resetUrl: reset.url,
+    message: sent
+      ? "Reset-Mail wurde versendet."
+      : "Reset-Link wurde erstellt, aber die Mail konnte nicht gesendet werden.",
+  });
 }
