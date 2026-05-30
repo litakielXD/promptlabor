@@ -86,6 +86,26 @@ export const emailTemplates = {
     };
   },
 
+  passwordReset: (name: string, resetUrl: string) => {
+    const safeName = escapeHtml(name);
+    const safeUrl = escapeHtml(resetUrl);
+    return {
+    subject: "Passwort für Promptlabor zurücksetzen",
+    html: `
+      <div style="font-family: Inter, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0f172a; color: #e2e8f0; padding: 40px; border-radius: 12px;">
+        <h1 style="color: #a78bfa; font-size: 24px; margin-bottom: 16px;">Passwort zurücksetzen</h1>
+        <p>Hallo ${safeName},</p>
+        <p>für dein Promptlabor-Konto wurde ein Link zum Zurücksetzen des Passworts angefordert.</p>
+        <p>Der Link ist 60 Minuten gültig.</p>
+        <a href="${safeUrl}" style="display: inline-block; background: #7c3aed; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; margin-top: 16px;">Neues Passwort setzen</a>
+        <p style="color: #94a3b8; font-size: 13px; margin-top: 24px;">Falls du das nicht angefordert hast, kannst du diese E-Mail ignorieren.</p>
+        <hr style="border-color: #1e293b; margin: 24px 0;" />
+        <p style="font-size: 12px; color: #64748b;">Promptlabor – Prompt-Bibliothek für Bildung</p>
+      </div>
+    `,
+    };
+  },
+
   newPromptNotification: (promptTitle: string, promptSlug: string, userName: string) => {
     const safeTitle = escapeHtml(promptTitle);
     const safeName = escapeHtml(userName);

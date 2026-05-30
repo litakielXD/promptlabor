@@ -23,6 +23,11 @@ model User {
   notifyOnNewPrompt   Boolean @default(false)
   notifyOnNewComment  Boolean @default(false)
 
+  // Passwort-Reset
+  passwordResetTokenHash String?
+  passwordResetExpires   DateTime?
+  passwordResetSentAt    DateTime?
+
   prompts       Prompt[]
   comments      Comment[]
   subscriptions Subscription[]

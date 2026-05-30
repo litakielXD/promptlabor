@@ -40,6 +40,7 @@ export default function AdminPage() {
   const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [passwordResetStatus, setPasswordResetStatus] = useState<Record<string, "sending" | "sent" | "error">>({});
   const isAdmin = isAdminSession(session);
 
   useEffect(() => {
@@ -97,6 +98,25 @@ export default function AdminPage() {
           }
         : prev
     );
+  }
+
+  async function sendPasswordReset(user: User) {
+    setPasswordResetStatus((prev) => ({ ...prev, [user.id]: "sending" }));
+    const res = await fetch(apiPath(`/admin/users/${user.id}/password-reset`), {
+      method: "POST",
+    });
+
+    setPasswordResetStatus((prev) => ({ ...prev, [user.id]: res.ok ? "sent" : "error" }));
+
+    if (res.ok) {
+      setTimeout(() => {
+        setPasswordResetStatus((prev) => {
+          const next = { ...prev };
+          delete next[user.id];
+          return next;
+        });
+      }, 4000);
+    }
   }
 
   if (loading || !data) {
@@ -280,7 +300,21 @@ export default function AdminPage() {
                       {formatRelativeDate(user.createdAt)}
                     </td>
                     <td style={{ padding: "12px" }}>
-                      <div style={{ display: "flex", gap: "6px" }}>
+                      <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                        <button
+                          onClick={() => sendPasswordReset(user)}
+                          className="btn btn-ghost btn-sm"
+                          disabled={passwordResetStatus[user.id] === "sending"}
+                          title="Reset-Link per E-Mail senden"
+                        >
+                          {passwordResetStatus[user.id] === "sending"
+                            ? "Sende..."
+                            : passwordResetStatus[user.id] === "sent"
+                              ? "Reset gesendet"
+                              : passwordResetStatus[user.id] === "error"
+                                ? "Fehler"
+                                : "Passwort resetten"}
+                        </button>
                         {!user.approved && (
                           <button onClick={() => approveUser(user.id, true)} className="btn btn-sm" style={{ background: "rgba(16,185,129,0.15)", color: "var(--accent-green)", border: "1px solid rgba(16,185,129,0.3)" }}>
                             ✓
