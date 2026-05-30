@@ -21,7 +21,7 @@ const transporter = nodemailer.createTransport({
     process.env.SMTP_USER
       ? {
           user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
+          pass: process.env.SMTP_PASS || process.env.SMTP_PASSWORD,
         }
       : undefined,
 });
@@ -37,7 +37,7 @@ export async function sendMail({
 }) {
   try {
     await transporter.sendMail({
-      from: process.env.SMTP_FROM || "Promptlabor <noreply@promptlabor.de>",
+      from: process.env.SMTP_FROM || process.env.EMAIL_FROM || "Promptlabor <noreply@promptlabor.de>",
       to: Array.isArray(to) ? to.join(", ") : to,
       subject,
       html,
