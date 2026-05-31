@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import ModelBadge from "@/components/ModelBadge";
-import { formatRelativeDate, parseTags, truncate } from "@/lib/utils";
+import { appPath, formatRelativeDate, parseTags, truncate } from "@/lib/utils";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -35,86 +35,121 @@ async function getHomeData() {
 
 export default async function HomePage() {
   const { featuredPrompts, categories, totalCount } = await getHomeData();
+  const taskLinks = [
+    {
+      title: "Material erstellen",
+      description: "Arbeitsblätter, Lernpfade, Quiz",
+      href: "/prompts?search=Arbeitsblatt",
+      accent: "var(--accent-blue)",
+      icon: "📄",
+    },
+    {
+      title: "Feedback geben",
+      description: "Rückmeldungen und Korrektur",
+      href: "/prompts?search=Feedback",
+      accent: "var(--accent-green)",
+      icon: "✍️",
+    },
+    {
+      title: "Präsentieren",
+      description: "Folien, Karten, NotebookLM",
+      href: "/prompts?search=Präsentation",
+      accent: "var(--accent-yellow)",
+      icon: "▦",
+    },
+    {
+      title: "Interaktiv bauen",
+      description: "HTML-Tools und Lernspiele",
+      href: "/prompts?search=HTML",
+      accent: "var(--accent-purple-light)",
+      icon: "⚡",
+    },
+  ];
 
   return (
     <div className="page-content">
-      {/* Hero */}
-      <section className="hero">
-        <div className="hero-label">
-          <span>🧪</span>
-          <span>Prompt-Bibliothek für Bildung</span>
-        </div>
-        <h1 className="hero-title">
-          Prompts entdecken,<br />
-          teilen & verbessern
-        </h1>
-        <p className="hero-subtitle">
-          Eine kuratierte Sammlung bewährter KI-Prompts für Schule und Unterrichtsentwicklung –
-          mit Beispielen, Erfahrungen und Kommentaren aus der Praxis.
-        </p>
-        <div className="hero-actions">
-          <Link href="/prompts" className="btn btn-primary btn-lg">
-            Alle Prompts ansehen →
-          </Link>
-          <Link href="/registrieren" className="btn btn-secondary btn-lg">
-            Mitmachen
-          </Link>
-        </div>
-
-        {/* Stats */}
-        <div style={{ display: "flex", gap: "32px", justifyContent: "center", marginTop: "40px" }}>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "1.8rem", fontWeight: "800", color: "var(--accent-purple-light)" }}>{totalCount}</div>
-            <div style={{ fontSize: "0.82rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Prompts</div>
-          </div>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "1.8rem", fontWeight: "800", color: "var(--accent-blue)" }}>{categories.length}</div>
-            <div style={{ fontSize: "0.82rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Kategorien</div>
-          </div>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "1.8rem", fontWeight: "800", color: "var(--accent-green)" }}>4</div>
-            <div style={{ fontSize: "0.82rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>KI-Modelle</div>
-          </div>
-        </div>
-      </section>
-
       <div className="container">
-        {/* Kategorien */}
-        {categories.length > 0 && (
-          <section style={{ marginBottom: "60px" }}>
-            <div className="section-header">
-              <div>
-                <h2 className="section-title">Kategorien</h2>
-                <p className="section-subtitle">Thematisch organisierte Prompt-Sammlungen</p>
-              </div>
-              <Link href="/kategorien" className="btn btn-ghost btn-sm">Alle ansehen →</Link>
+        <section className="home-workbench">
+          <div className="home-workbench-main">
+            <div className="hero-label home-label">
+              <span>🧪</span>
+              <span>Promptlabor</span>
             </div>
-            <div className="categories-grid">
-              {categories.map((cat) => (
-                <Link key={cat.id} href={`/kategorien/${cat.slug}`}>
-                  <div
-                    className="category-card"
-                    style={{ borderLeft: `3px solid ${cat.color}` }}
-                  >
-                    <div className="category-card-icon">{cat.icon}</div>
-                    <div>
-                      <div className="category-card-name">{cat.name}</div>
-                      <div className="category-card-count">
-                        {cat._count.prompts} {cat._count.prompts === 1 ? "Prompt" : "Prompts"}
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
+            <h1 className="home-title">Prompts für Schule, die direkt weiterhelfen.</h1>
+            <p className="home-subtitle">
+              Finde Vorlagen für Unterricht, Feedback, Materialerstellung und Lernpfade –
+              gesammelt für den praktischen Einsatz.
+            </p>
 
-        {/* Neueste Prompts */}
-        <section>
+            <form action={appPath("/prompts")} className="home-search">
+              <input
+                name="search"
+                type="search"
+                className="form-input home-search-input"
+                placeholder="Prompt suchen, z.B. Kahoot, Deutschkorrektur, Lernpfad..."
+              />
+              <button className="btn btn-primary btn-lg" type="submit">
+                Suchen →
+              </button>
+            </form>
+
+            <div className="home-actions-row">
+              <Link href="/prompts" className="btn btn-secondary">
+                Alle Prompts
+              </Link>
+              <Link href="/kategorien" className="btn btn-ghost">
+                Kategorien ansehen
+              </Link>
+              <Link href="/registrieren" className="btn btn-ghost">
+                Mitmachen
+              </Link>
+            </div>
+          </div>
+
+          <aside className="home-status-panel">
+            <div className="home-status-label">Sammlung</div>
+            <div className="home-status-grid">
+              <div>
+                <strong>{totalCount}</strong>
+                <span>Prompts</span>
+              </div>
+              <div>
+                <strong>{categories.length}</strong>
+                <span>Kategorien</span>
+              </div>
+            </div>
+            <div className="home-status-note">
+              Die meisten Prompts sind allround formuliert und funktionieren mit ChatGPT, Claude und Gemini.
+            </div>
+            <Link href="/prompts?model=NOTEBOOKLM" className="home-status-link">
+              NotebookLM-Prompts ansehen →
+            </Link>
+          </aside>
+        </section>
+
+        <section style={{ marginBottom: "56px" }}>
           <div className="section-header">
             <div>
-              <h2 className="section-title">Neueste Prompts</h2>
+              <h2 className="section-title">Schnell starten</h2>
+              <p className="section-subtitle">Typische Aufgaben direkt öffnen</p>
+            </div>
+          </div>
+          <div className="task-grid">
+            {taskLinks.map((task) => (
+              <Link key={task.title} href={task.href} className="task-card" style={{ borderTopColor: task.accent }}>
+                <span className="task-icon" style={{ color: task.accent }}>{task.icon}</span>
+                <strong>{task.title}</strong>
+                <span>{task.description}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* Neueste Prompts */}
+        <section style={{ marginBottom: "60px" }}>
+          <div className="section-header">
+            <div>
+              <h2 className="section-title">Neu im Labor</h2>
               <p className="section-subtitle">Frisch hinzugefügt und direkt ausprobierbar</p>
             </div>
             {totalCount > 6 && (
@@ -179,20 +214,36 @@ export default async function HomePage() {
           )}
         </section>
 
-        {/* Modellnutzung Info */}
-        <section style={{ marginTop: "60px" }}>
-          <div className="card" style={{ padding: "32px" }}>
-            <h2 style={{ marginBottom: "8px", fontSize: "1.2rem", fontWeight: "700" }}>
-              Modellunabhängig nutzbar
-            </h2>
-            <p style={{ color: "var(--text-secondary)", marginBottom: "24px", fontSize: "0.9rem" }}>
-              Die meisten Prompts sind bewusst modellunabhängig formuliert und funktionieren gut mit ChatGPT, Claude und Gemini. Eine Kennzeichnung erscheint nur, wenn ein Prompt wirklich an ein bestimmtes Tool gebunden ist.
-            </p>
-            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-              <ModelBadge model="NOTEBOOKLM" />
+        {/* Kategorien */}
+        {categories.length > 0 && (
+          <section style={{ marginBottom: "60px" }}>
+            <div className="section-header">
+              <div>
+                <h2 className="section-title">Kategorien</h2>
+                <p className="section-subtitle">Thematisch organisierte Prompt-Sammlungen</p>
+              </div>
+              <Link href="/kategorien" className="btn btn-ghost btn-sm">Alle ansehen →</Link>
             </div>
-          </div>
-        </section>
+            <div className="categories-grid">
+              {categories.map((cat) => (
+                <Link key={cat.id} href={`/kategorien/${cat.slug}`}>
+                  <div
+                    className="category-card"
+                    style={{ borderLeft: `3px solid ${cat.color}` }}
+                  >
+                    <div className="category-card-icon">{cat.icon}</div>
+                    <div>
+                      <div className="category-card-name">{cat.name}</div>
+                      <div className="category-card-count">
+                        {cat._count.prompts} {cat._count.prompts === 1 ? "Prompt" : "Prompts"}
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );

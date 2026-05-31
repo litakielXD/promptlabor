@@ -718,6 +718,164 @@ button, input, textarea, select {
 }
 
 /* ============================================
+   STARTSEITE / WERKBANK
+   ============================================ */
+
+.home-workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 24px;
+  align-items: stretch;
+  margin-bottom: 48px;
+}
+
+.home-workbench-main {
+  min-height: 360px;
+  padding: 36px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background:
+    linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+  box-shadow: var(--shadow-md);
+}
+
+.home-label {
+  margin-bottom: 18px;
+}
+
+.home-title {
+  max-width: 760px;
+  font-size: clamp(2rem, 4vw, 3.1rem);
+  font-weight: 800;
+  line-height: 1.12;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  letter-spacing: 0;
+}
+
+.home-subtitle {
+  max-width: 680px;
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  line-height: 1.7;
+  margin-bottom: 28px;
+}
+
+.home-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  max-width: 760px;
+  margin-bottom: 18px;
+}
+
+.home-search-input {
+  min-height: 52px;
+  font-size: 1rem;
+}
+
+.home-actions-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.home-status-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+}
+
+.home-status-label {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.home-status-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.home-status-grid div {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-input);
+}
+
+.home-status-grid strong {
+  display: block;
+  color: var(--accent-purple-light);
+  font-size: 1.7rem;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.home-status-grid span,
+.home-status-note {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.home-status-link {
+  color: var(--text-link);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.task-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.task-card {
+  display: flex;
+  min-height: 150px;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--accent-purple-light);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  transition: all var(--transition-slow);
+}
+
+.task-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--border-light);
+  background: var(--bg-card-hover);
+  box-shadow: var(--shadow-md);
+}
+
+.task-icon {
+  font-size: 1.7rem;
+  line-height: 1;
+}
+
+.task-card strong {
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.task-card span:last-child {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+/* ============================================
    GRID
    ============================================ */
 
@@ -1117,6 +1275,12 @@ button, input, textarea, select {
 @media (max-width: 768px) {
   .container { padding: 0 16px; }
   .hero { padding: 48px 16px 40px; }
+  .home-workbench { grid-template-columns: 1fr; }
+  .home-workbench-main { padding: 28px; min-height: auto; }
+  .home-search { grid-template-columns: 1fr; }
+  .home-search .btn-lg { width: 100%; }
+  .home-status-panel { padding: 22px; }
+  .task-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .prompts-grid { grid-template-columns: 1fr; }
   .categories-grid { grid-template-columns: repeat(2, 1fr); }
   .navbar-nav { display: none; }
@@ -1127,6 +1291,10 @@ button, input, textarea, select {
 
 @media (max-width: 480px) {
   .categories-grid { grid-template-columns: 1fr; }
+  .task-grid { grid-template-columns: 1fr; }
+  .home-title { font-size: 2rem; }
+  .home-workbench-main { padding: 22px; }
+  .home-status-grid { grid-template-columns: 1fr; }
   .hero-actions { flex-direction: column; width: 100%; }
   .btn-lg { width: 100%; }
 }
