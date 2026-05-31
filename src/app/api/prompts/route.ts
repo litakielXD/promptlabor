@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/utils";
 import { sendMail, emailTemplates } from "@/lib/mail";
 import { isAdminSession } from "@/lib/session";
+import { safeImageFilename, validateImageFile } from "@/lib/upload";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
@@ -75,11 +76,16 @@ export async function POST(req: NextRequest) {
     let outputImageUrl: string | undefined;
 
     if (imageFile && imageFile.size > 0) {
+      const validation = validateImageFile(imageFile);
+      if (!validation.valid) {
+        return NextResponse.json({ error: validation.error }, { status: 400 });
+      }
+
       const bytes = await imageFile.arrayBuffer();
       const buffer = Buffer.from(bytes);
       const uploadDir = path.join(process.cwd(), "public", "uploads");
       await mkdir(uploadDir, { recursive: true });
-      const filename = `${Date.now()}-${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+      const filename = safeImageFilename(imageFile);
       await writeFile(path.join(uploadDir, filename), buffer);
       outputImageUrl = `/uploads/${filename}`;
     }
@@ -136,8 +142,8 @@ async function notifySubscribers(promptId: string, title: string, slug: string, 
     if (sub.user.approved) recipients.set(sub.user.email, sub.user.name);
   }
 
-  for (const [email, name] of recipients) {
+  await Promise.allSettled(Array.from(recipients, ([email, name]) => {
     const tmpl = emailTemplates.newPromptNotification(title, slug, name);
-    await sendMail({ to: email, ...tmpl });
-  }
+    return sendMail({ to: email, ...tmpl });
+  }));
 }

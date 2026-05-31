@@ -13,7 +13,6 @@ export default function ModelBadge({ model, showLabel = true, size = "md" }: Mod
   const info = AI_MODELS[key];
 
   if (!info) return null;
-  if (key === "ALLROUND") return null;
 
   const className = `model-badge ${key.toLowerCase()} ${size === "sm" ? "btn-sm" : ""}`;
 

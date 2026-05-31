@@ -11,6 +11,7 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 const MODELS = [
   { key: "", label: "Alle Prompts" },
+  { key: "ALLROUND", label: "Allround" },
   { key: "NOTEBOOKLM", label: "NotebookLM" },
 ];
 

@@ -5,6 +5,8 @@ import { sendMail, emailTemplates } from "@/lib/mail";
 import { truncate } from "@/lib/utils";
 import { isApprovedSession } from "@/lib/session";
 
+const MAX_COMMENT_LENGTH = 2000;
+
 // Kommentar erstellen
 export async function POST(
   req: NextRequest,
@@ -23,6 +25,10 @@ export async function POST(
 
   if (!content || content.trim().length < 3) {
     return NextResponse.json({ error: "Kommentar ist zu kurz." }, { status: 400 });
+  }
+
+  if (content.trim().length > MAX_COMMENT_LENGTH) {
+    return NextResponse.json({ error: `Kommentar darf maximal ${MAX_COMMENT_LENGTH} Zeichen haben.` }, { status: 400 });
   }
 
   const prompt = await prisma.prompt.findUnique({
@@ -86,7 +92,7 @@ async function notifyCommentSubscribers(
 
   const excerpt = truncate(commentContent, 120);
 
-  for (const [email, name] of recipients) {
+  await Promise.allSettled(Array.from(recipients, ([email, name]) => {
     const tmpl = emailTemplates.newCommentNotification(
       promptTitle,
       promptSlug,
@@ -94,6 +100,6 @@ async function notifyCommentSubscribers(
       excerpt,
       name
     );
-    await sendMail({ to: email, ...tmpl });
-  }
+    return sendMail({ to: email, ...tmpl });
+  }));
 }

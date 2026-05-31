@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/utils";
 import { isAdminSession } from "@/lib/session";
+import { safeImageFilename, validateImageFile } from "@/lib/upload";
 import { writeFile, mkdir, unlink } from "fs/promises";
 import path from "path";
 
@@ -68,6 +69,11 @@ export async function PATCH(
     let outputImageUrl = existing.outputImageUrl;
 
     if (imageFile && imageFile.size > 0) {
+      const validation = validateImageFile(imageFile);
+      if (!validation.valid) {
+        return NextResponse.json({ error: validation.error }, { status: 400 });
+      }
+
       // Altes Bild löschen
       if (existing.outputImageUrl) {
         try {
@@ -78,7 +84,7 @@ export async function PATCH(
       const buffer = Buffer.from(bytes);
       const uploadDir = path.join(process.cwd(), "public", "uploads");
       await mkdir(uploadDir, { recursive: true });
-      const filename = `${Date.now()}-${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+      const filename = safeImageFilename(imageFile);
       await writeFile(path.join(uploadDir, filename), buffer);
       outputImageUrl = `/uploads/${filename}`;
     }

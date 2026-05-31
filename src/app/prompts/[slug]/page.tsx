@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { isValidElement, cloneElement, useState, useEffect, type FormEvent, type ReactElement, type ReactNode } from "react";
 import { useSession } from "next-auth/react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -39,11 +39,22 @@ function PromptMarkdown({ content }: { content: string }) {
   );
 }
 
-function processChildren(children: React.ReactNode): React.ReactNode {
+function processChildren(children: ReactNode): ReactNode {
   if (typeof children === "string") return highlightPlaceholders(children);
-  if (Array.isArray(children)) return children.map((c, i) =>
-    typeof c === "string" ? <span key={i}>{highlightPlaceholders(c)}</span> : c
-  );
+  if (Array.isArray(children)) return children.map((c, i) => {
+    if (typeof c === "string") return <span key={i}>{highlightPlaceholders(c)}</span>;
+    if (isValidElement<{ children?: ReactNode }>(c) && c.props.children) {
+      return cloneElement(c as ReactElement<{ children?: ReactNode }>, {
+        children: processChildren(c.props.children),
+      });
+    }
+    return c;
+  });
+  if (isValidElement<{ children?: ReactNode }>(children) && children.props.children) {
+    return cloneElement(children as ReactElement<{ children?: ReactNode }>, {
+      children: processChildren(children.props.children),
+    });
+  }
   return children;
 }
 
@@ -85,6 +96,7 @@ export default function PromptDetailPage() {
   const [comment, setComment] = useState("");
   const [isSuccessStory, setIsSuccessStory] = useState(false);
   const [commentLoading, setCommentLoading] = useState(false);
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
   const [commentError, setCommentError] = useState("");
   const [copied, setCopied] = useState(false);
 
@@ -121,7 +133,7 @@ export default function PromptDetailPage() {
     setSubLoading(false);
   }
 
-  async function submitComment(e: React.FormEvent) {
+  async function submitComment(e: FormEvent) {
     e.preventDefault();
     setCommentError("");
     setCommentLoading(true);
@@ -141,6 +153,23 @@ export default function PromptDetailPage() {
       setCommentError(data.error || "Fehler beim Absenden.");
     }
     setCommentLoading(false);
+  }
+
+  async function deleteComment(commentId: string) {
+    if (!confirm("Kommentar wirklich löschen?")) return;
+    setDeletingCommentId(commentId);
+    const res = await fetch(apiPath(`/comments/${commentId}`), { method: "DELETE" });
+
+    if (res.ok) {
+      setPrompt((prev) =>
+        prev ? { ...prev, comments: prev.comments.filter((c) => c.id !== commentId) } : prev
+      );
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setCommentError(data.error || "Kommentar konnte nicht gelöscht werden.");
+    }
+
+    setDeletingCommentId(null);
   }
 
   async function copyPrompt() {
@@ -313,9 +342,13 @@ export default function PromptDetailPage() {
                       placeholder="Teile deine Erfahrungen, Anpassungen oder Tipps zu diesem Prompt..."
                       value={comment}
                       onChange={(e) => setComment(e.target.value)}
+                      maxLength={2000}
                       rows={4}
                       required
                     />
+                    <span className="form-hint" style={{ alignSelf: "flex-end" }}>
+                      {comment.length}/2000 Zeichen
+                    </span>
                   </div>
 
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
@@ -381,6 +414,16 @@ export default function PromptDetailPage() {
                           <span className="success-badge">🏆 Erfolgserlebnis</span>
                         )}
                         <span className="comment-date">{formatRelativeDate(c.createdAt)}</span>
+                        {(isAdmin || c.author.id === session?.user.id) && (
+                          <button
+                            onClick={() => deleteComment(c.id)}
+                            className="btn btn-ghost btn-sm"
+                            disabled={deletingCommentId === c.id}
+                            style={{ marginLeft: "auto" }}
+                          >
+                            {deletingCommentId === c.id ? "Lösche..." : "Löschen"}
+                          </button>
+                        )}
                       </div>
                       <p className="comment-content">{c.content}</p>
                     </div>
