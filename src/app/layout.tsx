@@ -11,6 +11,15 @@ export const metadata: Metadata = {
   description:
     "Entdecke, teile und kommentiere KI-Prompts für Schule und Unterrichtsentwicklung. Eine Sammlung bewährter Prompts für ChatGPT, Claude, Gemini und NotebookLM.",
   keywords: ["KI", "Prompts", "Schule", "Unterricht", "ChatGPT", "Claude", "Gemini", "NotebookLM", "Lehrkräfte"],
+  icons: {
+    icon: "/icon.png",
+    apple: "/icon.png",
+  },
+  openGraph: {
+    siteName: "Promptlabor",
+    type: "website",
+    locale: "de_DE",
+  },
 };
 
 export default function RootLayout({

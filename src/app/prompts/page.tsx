@@ -9,6 +9,8 @@ import { apiPath, formatRelativeDate, parseTags, truncate } from "@/lib/utils";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
+const PAGE_SIZE = 12;
+
 const MODELS = [
   { key: "", label: "Alle Prompts" },
   { key: "ALLROUND", label: "Allround" },
@@ -21,12 +23,25 @@ function PromptsContent() {
   const [search, setSearch] = useState(searchParams.get("search") || "");
   const model = searchParams.get("model") || "";
   const category = searchParams.get("category") || "";
+  const [page, setPage] = useState(1);
 
-  const { data: prompts, isLoading } = useSWR(
-    apiPath(`/prompts?${new URLSearchParams({ ...(search && { search }), ...(model && { model }), ...(category && { category }) }).toString()}`),
+  // Filter-Änderungen setzen Seite zurück
+  const queryParams = new URLSearchParams({
+    ...(search && { search }),
+    ...(model && { model }),
+    ...(category && { category }),
+    take: String(PAGE_SIZE * page),
+  }).toString();
+
+  const { data: result, isLoading } = useSWR(
+    apiPath(`/prompts?${queryParams}`),
     fetcher,
     { refreshInterval: 30000 }
   );
+
+  const prompts = result?.prompts ?? result ?? [];
+  const totalCount = result?.total ?? prompts.length;
+  const hasMore = prompts.length < totalCount;
 
   const { data: categories } = useSWR(apiPath("/categories"), fetcher);
 
@@ -34,6 +49,7 @@ function PromptsContent() {
     const params = new URLSearchParams(searchParams.toString());
     if (value) params.set(key, value);
     else params.delete(key);
+    setPage(1); // Filter-Reset → erste Seite
     router.push(`/prompts?${params.toString()}`);
   }
 
@@ -46,7 +62,7 @@ function PromptsContent() {
             Alle Prompts
           </h1>
           <p style={{ color: "var(--text-secondary)" }}>
-            {prompts ? `${prompts.length} ${prompts.length === 1 ? "Prompt" : "Prompts"} gefunden` : "Lade..."}
+            {isLoading ? "Lade…" : `${totalCount} ${totalCount === 1 ? "Prompt" : "Prompts"}`}
           </p>
         </div>
 
@@ -165,6 +181,18 @@ function PromptsContent() {
                 </Link>
               );
             })}
+          </div>
+        )}
+
+        {/* Lade mehr */}
+        {!isLoading && hasMore && (
+          <div style={{ display: "flex", justifyContent: "center", marginTop: "32px" }}>
+            <button
+              className="btn btn-secondary"
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Weitere Prompts laden ({totalCount - prompts.length} mehr)
+            </button>
           </div>
         )}
       </div>

@@ -15,6 +15,8 @@ export async function GET(req: NextRequest) {
   const model = searchParams.get("model");
   const search = searchParams.get("search");
   const admin = searchParams.get("admin");
+  const takeParam = searchParams.get("take");
+  const take = takeParam ? Math.min(parseInt(takeParam, 10), 100) : undefined;
 
   const session = await auth();
   const isAdmin = isAdminSession(session);
@@ -40,17 +42,24 @@ export async function GET(req: NextRequest) {
     ];
   }
 
-  const prompts = await prisma.prompt.findMany({
-    where,
-    include: {
-      author: { select: { name: true, id: true } },
-      category: true,
-      _count: { select: { comments: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const [prompts, total] = await prisma.$transaction([
+    prisma.prompt.findMany({
+      where,
+      include: {
+        author: { select: { name: true, id: true } },
+        category: true,
+        _count: { select: { comments: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      ...(take ? { take } : {}),
+    }),
+    prisma.prompt.count({ where }),
+  ]);
 
-  return NextResponse.json(prompts);
+  // Wenn kein take-Parameter → altes Verhalten (reines Array) für Rückwärtskompatibilität
+  if (!take) return NextResponse.json(prompts);
+
+  return NextResponse.json({ prompts, total });
 }
 
 // Neuen Prompt erstellen (Admin)
