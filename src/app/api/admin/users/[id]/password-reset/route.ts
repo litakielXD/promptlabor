@@ -31,7 +31,7 @@ export async function POST(
   return NextResponse.json({
     success: true,
     mailSent: sent,
-    resetUrl: reset.url,
+    resetUrl: sent ? undefined : reset.url,
     message: sent
       ? "Reset-Mail wurde versendet."
       : "Reset-Link wurde erstellt, aber die Mail konnte nicht gesendet werden.",

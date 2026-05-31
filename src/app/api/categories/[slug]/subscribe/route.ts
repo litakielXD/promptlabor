@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { isApprovedSession } from "@/lib/session";
 
 // Abo-Status für eine Kategorie prüfen
 export async function GET(
@@ -28,9 +29,15 @@ export async function POST(
 ) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Bitte einloggen." }, { status: 401 });
+  if (!isApprovedSession(session)) {
+    return NextResponse.json({ error: "Konto noch nicht freigeschaltet." }, { status: 403 });
+  }
 
   const { slug } = await params;
   const { action } = await req.json();
+  if (action !== "subscribe" && action !== "unsubscribe") {
+    return NextResponse.json({ error: "Ungültige Aktion." }, { status: 400 });
+  }
 
   const category = await prisma.category.findUnique({ where: { slug }, select: { id: true } });
   if (!category) return NextResponse.json({ error: "Kategorie nicht gefunden." }, { status: 404 });

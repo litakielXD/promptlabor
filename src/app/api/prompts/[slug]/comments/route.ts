@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { sendMail, emailTemplates } from "@/lib/mail";
 import { truncate } from "@/lib/utils";
 import { isApprovedSession } from "@/lib/session";
+import { rateLimit } from "@/lib/rate-limit";
 
 const MAX_COMMENT_LENGTH = 2000;
 
@@ -18,6 +19,13 @@ export async function POST(
   }
   if (!isApprovedSession(session)) {
     return NextResponse.json({ error: "Konto noch nicht freigeschaltet." }, { status: 403 });
+  }
+  const limited = rateLimit(`comment:${session.user.id}`, 20, 60 * 60 * 1000);
+  if (limited.limited) {
+    return NextResponse.json(
+      { error: "Zu viele Kommentare in kurzer Zeit. Bitte später erneut versuchen." },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSeconds || 3600) } }
+    );
   }
 
   const { slug } = await params;

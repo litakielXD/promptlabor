@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { slugify } from "@/lib/utils";
 import { isAdminSession } from "@/lib/session";
+import { uniqueCategorySlug } from "@/lib/slugs";
+import { asTrimmedString, isValidHexColor } from "@/lib/validation";
 
 export async function PATCH(
   req: NextRequest,
@@ -19,16 +20,27 @@ export async function PATCH(
   const existing = await prisma.category.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Nicht gefunden." }, { status: 404 });
 
-  const nextSlug = name ? slugify(name) : existing.slug;
+  const cleanName = name !== undefined ? asTrimmedString(name, 120) : existing.name;
+  const cleanDescription = description !== undefined ? asTrimmedString(description, 300) : existing.description;
+  const cleanColor = typeof color === "string" && isValidHexColor(color) ? color : existing.color;
+  const cleanIcon = icon !== undefined ? asTrimmedString(icon, 8) || "📁" : existing.icon;
+
+  if (!cleanName) {
+    return NextResponse.json({ error: "Name ist erforderlich." }, { status: 400 });
+  }
+
+  const nextSlug = cleanName !== existing.name
+    ? await uniqueCategorySlug(cleanName, existing.id)
+    : existing.slug;
 
   const category = await prisma.category.update({
     where: { id },
     data: {
-      name: name ?? existing.name,
+      name: cleanName,
       slug: nextSlug,
-      description: description !== undefined ? description : existing.description,
-      color: color ?? existing.color,
-      icon: icon ?? existing.icon,
+      description: cleanDescription || null,
+      color: cleanColor,
+      icon: cleanIcon,
     },
     include: { _count: { select: { prompts: { where: { published: true } } } } },
   });

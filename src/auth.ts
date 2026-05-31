@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
+import { clearRateLimit, rateLimit } from "@/lib/rate-limit";
 import bcrypt from "bcryptjs";
 
 type PromptlaborAuthUser = {
@@ -20,6 +21,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
         const email = String(credentials.email).trim().toLowerCase();
+        const loginKey = `login:${email}`;
+        const limited = rateLimit(loginKey, 10, 15 * 60 * 1000);
+        if (limited.limited) throw new Error("LOGIN_RATE_LIMITED");
 
         const user = await prisma.user.findUnique({
           where: { email },
@@ -33,6 +37,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           user.password
         );
         if (!isValid) return null;
+        clearRateLimit(loginKey);
 
         return {
           id: user.id,

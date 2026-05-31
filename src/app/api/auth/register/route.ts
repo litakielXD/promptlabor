@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendMail, emailTemplates } from "@/lib/mail";
 import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
+import { asTrimmedString, isValidEmail, normalizeEmail } from "@/lib/validation";
 import bcrypt from "bcryptjs";
 
 function escapeHtml(value: string) {
@@ -29,10 +30,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Alle Felder sind erforderlich." }, { status: 400 });
     }
 
-    const normalizedEmail = String(email).trim().toLowerCase();
-    const normalizedName = String(name).trim();
+    const normalizedEmail = normalizeEmail(email);
+    const normalizedName = asTrimmedString(name, 100);
 
-    if (password.length < 8) {
+    if (!normalizedName || !isValidEmail(normalizedEmail)) {
+      return NextResponse.json({ error: "Bitte gib einen gültigen Namen und eine gültige E-Mail-Adresse ein." }, { status: 400 });
+    }
+
+    if (typeof password !== "string" || password.length < 8 || password.length > 200) {
       return NextResponse.json({ error: "Passwort muss mindestens 8 Zeichen haben." }, { status: 400 });
     }
 

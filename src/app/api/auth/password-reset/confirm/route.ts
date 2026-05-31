@@ -2,15 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { hashPasswordResetToken, isPasswordResetExpired } from "@/lib/password-reset";
+import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
+  const limited = rateLimit(getRateLimitKey(req, "password-reset-confirm"), 10, 15 * 60 * 1000);
+  if (limited.limited) {
+    return NextResponse.json(
+      { error: "Zu viele Versuche. Bitte später erneut versuchen." },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSeconds || 900) } }
+    );
+  }
+
   const { token, password } = await req.json();
 
   if (!token || typeof token !== "string") {
     return NextResponse.json({ error: "Reset-Link ist ungültig." }, { status: 400 });
   }
 
-  if (!password || typeof password !== "string" || password.length < 8) {
+  if (!password || typeof password !== "string" || password.length < 8 || password.length > 200) {
     return NextResponse.json({ error: "Das neue Passwort muss mindestens 8 Zeichen haben." }, { status: 400 });
   }
 

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { slugify } from "@/lib/utils";
 import { isAdminSession } from "@/lib/session";
+import { uniqueCategorySlug } from "@/lib/slugs";
+import { asTrimmedString, isValidHexColor } from "@/lib/validation";
 
 export async function GET() {
   const categories = await prisma.category.findMany({
@@ -19,15 +20,25 @@ export async function POST(req: NextRequest) {
   }
 
   const { name, description, color, icon } = await req.json();
+  const cleanName = asTrimmedString(name, 120);
+  const cleanDescription = asTrimmedString(description, 300);
+  const cleanColor = typeof color === "string" && isValidHexColor(color) ? color : "#6366f1";
+  const cleanIcon = asTrimmedString(icon, 8) || "📁";
 
-  if (!name) {
+  if (!cleanName) {
     return NextResponse.json({ error: "Name ist erforderlich." }, { status: 400 });
   }
 
-  const slug = slugify(name);
+  const slug = await uniqueCategorySlug(cleanName);
 
   const category = await prisma.category.create({
-    data: { name, slug, description, color: color || "#6366f1", icon: icon || "📁" },
+    data: {
+      name: cleanName,
+      slug,
+      description: cleanDescription || null,
+      color: cleanColor,
+      icon: cleanIcon,
+    },
   });
 
   return NextResponse.json({ success: true, category });

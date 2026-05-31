@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { slugify } from "@/lib/utils";
 import { sendMail, emailTemplates } from "@/lib/mail";
 import { isAdminSession } from "@/lib/session";
-import { safeImageFilename, validateImageFile } from "@/lib/upload";
+import { prepareImageUpload } from "@/lib/upload";
+import { uniquePromptSlug } from "@/lib/slugs";
+import { asTrimmedString, normalizeBoolean, normalizeOptionalUrl } from "@/lib/validation";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
+
+const ALLOWED_MODELS = new Set(["ALLROUND", "CHATGPT", "CLAUDE", "GEMINI", "NOTEBOOKLM"]);
 
 // Alle Prompts (öffentlich gelistet, nur published)
 export async function GET(req: NextRequest) {
@@ -71,35 +74,47 @@ export async function POST(req: NextRequest) {
 
   try {
     const formData = await req.formData();
-    const title = formData.get("title") as string;
-    const content = formData.get("content") as string;
-    const description = formData.get("description") as string;
-    const model = (formData.get("model") as string) || "ALLROUND";
-    const categoryId = formData.get("categoryId") as string;
-    const outputLink = formData.get("outputLink") as string;
-    const outputCaption = formData.get("outputCaption") as string;
-    const tagsRaw = formData.get("tags") as string;
-    const published = formData.get("published") === "true";
+    const title = asTrimmedString(formData.get("title"), 180);
+    const content = asTrimmedString(formData.get("content"), 30000);
+    const description = asTrimmedString(formData.get("description"), 500);
+    const model = asTrimmedString(formData.get("model"), 40).toUpperCase() || "ALLROUND";
+    const categoryId = asTrimmedString(formData.get("categoryId"), 80);
+    const outputLinkRaw = asTrimmedString(formData.get("outputLink"), 500);
+    const outputLink = normalizeOptionalUrl(outputLinkRaw);
+    const outputCaption = asTrimmedString(formData.get("outputCaption"), 300);
+    const tagsRaw = asTrimmedString(formData.get("tags"), 1000);
+    const published = normalizeBoolean(formData.get("published"));
     const imageFile = formData.get("outputImage") as File | null;
+
+    if (!title || !content || !categoryId) {
+      return NextResponse.json({ error: "Titel, Inhalt und Kategorie sind erforderlich." }, { status: 400 });
+    }
+    if (!ALLOWED_MODELS.has(model)) {
+      return NextResponse.json({ error: "Unbekanntes Modell." }, { status: 400 });
+    }
+    if (outputLinkRaw && !outputLink) {
+      return NextResponse.json({ error: "Der Output-Link muss eine gültige http(s)-URL sein." }, { status: 400 });
+    }
+    const category = await prisma.category.findUnique({ where: { id: categoryId }, select: { id: true } });
+    if (!category) {
+      return NextResponse.json({ error: "Kategorie nicht gefunden." }, { status: 400 });
+    }
 
     let outputImageUrl: string | undefined;
 
     if (imageFile && imageFile.size > 0) {
-      const validation = validateImageFile(imageFile);
-      if (!validation.valid) {
-        return NextResponse.json({ error: validation.error }, { status: 400 });
+      const upload = await prepareImageUpload(imageFile);
+      if (!upload.valid) {
+        return NextResponse.json({ error: upload.error }, { status: 400 });
       }
 
-      const bytes = await imageFile.arrayBuffer();
-      const buffer = Buffer.from(bytes);
       const uploadDir = path.join(process.cwd(), "public", "uploads");
       await mkdir(uploadDir, { recursive: true });
-      const filename = safeImageFilename(imageFile);
-      await writeFile(path.join(uploadDir, filename), buffer);
-      outputImageUrl = `/uploads/${filename}`;
+      await writeFile(path.join(uploadDir, upload.filename), upload.buffer);
+      outputImageUrl = `/uploads/${upload.filename}`;
     }
 
-    const slug = slugify(title);
+    const slug = await uniquePromptSlug(title);
     const tags = tagsRaw ? JSON.stringify(tagsRaw.split(",").map((t) => t.trim()).filter(Boolean)) : "[]";
 
     const prompt = await prisma.prompt.create({
@@ -108,9 +123,9 @@ export async function POST(req: NextRequest) {
         slug,
         content,
         description,
-        model: model.toUpperCase(),
+        model,
         categoryId,
-        outputLink: outputLink || null,
+        outputLink,
         outputCaption: outputCaption || null,
         outputImageUrl,
         tags,

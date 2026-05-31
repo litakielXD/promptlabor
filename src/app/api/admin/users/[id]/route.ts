@@ -17,6 +17,13 @@ export async function PATCH(
   const { id } = await params;
   const { approved } = await req.json();
 
+  if (typeof approved !== "boolean") {
+    return NextResponse.json({ error: "Ungültiger Status." }, { status: 400 });
+  }
+  if (id === session?.user.id && !approved) {
+    return NextResponse.json({ error: "Du kannst dein eigenes Konto nicht sperren." }, { status: 400 });
+  }
+
   const user = await prisma.user.update({
     where: { id },
     data: { approved },

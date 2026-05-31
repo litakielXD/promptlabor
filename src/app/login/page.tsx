@@ -25,6 +25,8 @@ export default function LoginPage() {
 
     if (result?.error === "PENDING_APPROVAL") {
       setError("Dein Konto wurde noch nicht freigeschaltet. Bitte warte auf die Bestätigung.");
+    } else if (result?.error === "LOGIN_RATE_LIMITED") {
+      setError("Zu viele Anmeldeversuche. Bitte warte einige Minuten und versuche es erneut.");
     } else if (result?.error) {
       setError("E-Mail oder Passwort falsch.");
     } else {
