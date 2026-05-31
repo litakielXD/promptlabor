@@ -37,8 +37,13 @@ export default function RootLayout({
           }}
         />
         <SessionWrapper>
-          <Navbar />
-          <main>{children}</main>
+          <div className="flex flex-col min-h-screen">
+            <Navbar />
+            <main className="flex-grow">{children}</main>
+            <footer className="border-t border-slate-200 dark:border-slate-800 py-6 text-center text-xs text-slate-500 dark:text-slate-400">
+              <p>Promptlabor &copy; 2026 | <a href="https://mondschule.de/impressum.html" target="_blank" rel="noopener noreferrer" className="underline hover:text-slate-800 dark:hover:text-slate-200 transition-colors">Impressum</a></p>
+            </footer>
+          </div>
         </SessionWrapper>
       </body>
     </html>
